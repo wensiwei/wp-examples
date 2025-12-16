@@ -4,8 +4,8 @@ WarpParse 日志解析引擎的示例项目，展示如何使用 WarpParse进行
 
 ## 提纲
 
-- **benchmark**：性能测试
 - **core**： 核心配置示例
+- **benchmark**：性能测试
 - **extensions**： 扩展示例
 - **enterprise**：  企业版本示例
 
@@ -17,7 +17,10 @@ WarpParse 日志解析引擎的示例项目，展示如何使用 WarpParse进行
 - Linux/macOS
 - 下载WarpParse 
 
-
+## 运行环境设置 
+### mac 
+* 放置到%{HOME}/bin， 并在 PATH 里可以访问到达
+* 安全许可运行
 
 ### 运行示例
 
