@@ -15,6 +15,5 @@ params = { base = "./data/in_dat", file = "gen.dat" }
 
 [logging]
 level = "warn"
-module_levels = ["ctrl=info", "launch=info"]
 output = "file"
 file_path = "./data/logs/"

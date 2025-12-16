@@ -1,164 +1,250 @@
-# file_blackhole 场景说明
+# file_blackhole 说明
 
-本用例演示"文件源 → Blackhole 汇"的性能基准测试场景：使用双路文件源（wpgen.toml 和 wpgen1.toml）生成测试数据，通过 wparse batch 模式处理，输出到 blackhole（丢弃）以测试纯解析吞吐性能。
-
-## 场景特点
-
-- **双路文件源**：同时生成 `gen.dat` 和 `gen1.dat` 两个数据文件
-- **Batch 处理**：使用批处理模式（而非 daemon 模式）
-- **Blackhole 输出**：数据解析后丢弃，专注测试解析性能
-- **大规模数据**：默认 2000 万行，中等模式 20 万行
+本用例演示"文件源 → Blackhole 汇"的批处理性能基准测试场景：使用 wpgen 生成测试数据文件，wparse 通过批处理模式读取并解析，输出到 blackhole 以测试纯解析吞吐性能。
 
 ## 目录结构
 
 ```
-file_blackhole/
-├── conf/
-│   ├── wpgen.toml      # 第一路数据生成配置 → gen.dat
-│   └── wpgen1.toml     # 第二路数据生成配置 → gen1.dat
-├── models/
-│   ├── knowledge/      # 知识库（如有）
-│   └── sinks/
-│       ├── defaults.toml
-│       └── infra.d/    # 基础组（blackhole 输出）
-├── data/
-│   ├── in_dat/         # 输入数据目录
-│   │   ├── gen.dat     # 第一路生成数据
-│   │   └── gen1.dat    # 第二路生成数据
-│   └── logs/           # 日志目录
-├── out/                # 输出目录（blackhole 场景通常为空）
-└── run.sh              # 运行脚本
+benchmark/file_blackhole/
+├── README.md                    # 本说明文档
+├── run.sh                       # 性能测试运行脚本
+├── conf/                        # 配置文件目录
+│   ├── wparse.toml             # WarpParse 主配置
+│   ├── wpgen.toml              # 第一路文件生成器配置
+│   └── wpgen1.toml             # 第二路文件生成器配置
+├── models/                      # 模型配置目录
+│   ├── sinks/                  # 数据汇配置
+│   │   ├── defaults.toml       # 默认配置
+│   │   ├── business.d/         # 业务组配置
+│   │   │   └── all.toml        # Blackhole 汇组配置
+│   │   └── infra.d/            # 基础设施组配置
+│   │       ├── default.toml    # 默认数据汇
+│   │       ├── error.toml      # 错误数据处理
+│   │       ├── miss.toml       # 缺失数据处理
+│   │       ├── monitor.toml    # 监控数据处理
+│   │       └── residue.toml    # 残留数据处理
+│   ├── sources/                # 数据源配置
+│   │   └── wpsrc.toml          # 文件源配置
+│   ├── wpl/                    # WPL 解析规则目录
+│   │   ├── nginx/              # Nginx 日志规则
+│   │   ├── apache/             # Apache 日志规则
+│   │   └── sysmon/             # 系统监控规则
+│   ├── oml/                    # OML 转换规则目录（空）
+│   └── knowledge/              # 知识库目录（空）
+├── data/                        # 运行数据目录
+│   ├── in_dat/                 # 输入数据目录
+│   │   ├── gen.dat            # 第一路生成数据
+│   │   └── gen1.dat           # 第二路生成数据
+│   ├── out_dat/                # 输出数据目录
+│   │   ├── error.dat          # 错误数据输出
+│   │   ├── miss.dat           # 缺失数据输出
+│   │   ├── monitor.dat        # 监控数据输出
+│   │   └── residue.dat        # 残留数据输出
+│   ├── logs/                   # 日志文件目录
+│   └── rescue/                 # 救援数据目录
+├── out/                         # 输出目录
+└── .run/                        # 运行时数据目录
+    └── rule_mapping.dat        # 规则映射数据
 ```
 
-## 快速使用
+## 快速开始
 
-### 前置准备
+### 运行环境要求
 
-确保 `wparse`、`wpgen`、`wproj` 在 PATH 中：
+- WarpParse 引擎（需在系统 PATH 中）
+- Bash shell 环境
+- 推荐系统：
+  - **Linux**：最佳性能，支持所有优化功能
+  - **macOS**：良好性能，部分优化功能受限
+
+### 运行命令
+
 ```bash
-# 构建 release 版本
-cargo build-apps --release
-# 将二进制添加到 PATH 或复制到 ~/bin
-```
+# 进入 benchmark 目录
+cd benchmark/file_blackhole
 
-### 运行测试
+# 默认大规模性能测试（2000 万行数据）
+./run.sh
 
-```bash
-cd benchmark
+# 中等规模测试（20 万行数据）
+./run.sh -m
 
-# 默认大规模测试（2000 万行）
-./file_blackhole/run.sh
-
-# 中等规模测试（20 万行）
-./file_blackhole/run.sh -m
+# 强制重新生成数据（即使已存在）
+./run.sh -f
 
 # 指定 worker 数量
-./file_blackhole/run.sh -w 12
+./run.sh -w 8
 
-# 强制重新生成数据
-./file_blackhole/run.sh -f
+# 使用特定 WPL 规则
+./run.sh nginx
 
-# 使用 sysmon 规则
-./file_blackhole/run.sh sysmon
-
-# 组合选项：中等规模 + 8 worker + nginx 规则 + 限速 100 万行/秒
-./file_blackhole/run.sh -m -w 8 nginx 1000000
+# 组合使用
+./run.sh -m -w 8 -f nginx
 ```
 
-### 参数说明
+### 运行参数
 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
-| `-m` | 使用中等规模数据集 | 2000 万行 → 20 万行 |
-| `-f` | 强制重新生成数据 | 跳过已存在的数据 |
-| `-c <cnt>` | 指定数据条数 | 与 `-m` 互斥 |
-| `-w <cnt>` | 指定 worker 数量 | batch 默认 10 |
-| `wpl_dir` | WPL 规则目录 | nginx |
-| `speed` | 生成限速（行/秒） | 0（不限速） |
+| `-m` | 使用中等规模数据集 | 2000万 → 20万行 |
+| `-f` | 强制重新生成数据 | 智能检测 |
+| `-w <cnt>` | 指定 worker 数量 | 6 |
+| `wpl_dir` | WPL 规则目录名 | nginx |
+| `speed` | 生成器限速（行/秒） | 0（不限速） |
 
-## 配置文件
+### 性能测试选项
 
-### wpgen.toml（第一路）
-```toml
-[generator]
-mode = "sample"
-count = 1000
-speed = 0
-parallel = 1
+- **默认测试**：2000 万行数据，双路文件源，6 个 worker
+- **中等测试**：20 万行数据，适合快速验证
+- **强制生成**：`-f` 参数强制重新生成测试数据
+- **自定义 WPL**：支持 nginx、apache、sysmon 等规则
 
-[output]
-connect = "file_raw_sink"
-name = "gen_out"
-params = { base = "./data/in_dat", file = "gen.dat" }
-```
+## 执行逻辑
 
-### wpgen1.toml（第二路）
-```toml
-[generator]
-mode = "sample"
-count = 1000
-speed = 0
-parallel = 1
+### 流程概览
 
-[output]
-connect = "file_raw_sink"
-name = "gen_out"
-params = { base = "./data/in_dat", file = "gen1.dat" }
-```
+`run.sh` 脚本执行以下主要步骤：
 
-## 执行流程
+1. **环境准备**
+   - 加载 benchmark 公共函数库
+   - 解析命令行参数
+   - 设置默认值（大规模：2000万行，中等：20万行）
 
-1. **初始化环境**：加载 benchmark 公共函数库，设置 release profile
-2. **验证 WPL 路径**：确认规则目录存在
-3. **检查数据文件**：判断 `gen.dat` 和 `gen1.dat` 是否已存在
-4. **条件生成数据**：若数据不存在或指定 `-f`，则生成新数据
-5. **执行 batch 测试**：运行 `wparse batch` 处理数据
-6. **输出统计**：调用 `wproj data stat` 显示结果
+2. **数据生成检查**
+   - 检查 `data/in_dat/gen.dat` 和 `data/in_dat/gen1.dat` 是否存在
+   - 如果不存在或使用 `-f` 参数，则生成新数据
 
-## 输出示例
+3. **数据生成**（如需要）
+   - 启动 `wpgen` 生成第一路数据到 `gen.dat`
+   - 启动 `wpgen` 生成第二路数据到 `gen1.dat`
+   - 支持并发生成提高效率
+
+4. **批处理执行**
+   - 使用 `wparse batch` 读取文件数据
+   - 应用 WPL 规则进行解析
+   - 数据输出到 blackhole（丢弃）
+
+5. **性能统计**
+   - 实时显示处理进度
+   - 记录吞吐量、处理时间等指标
+   - 输出最终性能报告
+
+### 数据流向
 
 ```
-Using WPL path: ../models/wpl/nginx
-Using large dataset: LINE_CNT=20000000
-Checking existing data files...
-Found existing data file: ./data/in_dat/gen.dat (20000000 lines)
-Found existing data file: ./data/in_dat/gen1.dat (20000000 lines)
-Data files already exist and -f flag not specified. Skipping data generation.
-2> Running batch processing
-[STAT] input: 40000000, output: 39500000, miss: 300000, error: 200000
-...
+wpgen 生成器 1        wpgen 生成器 2
+       ↓                    ↓
+   gen.dat              gen1.dat
+       ↓                    ↓
+┌────────────────────────────────┐
+│      wparse batch             │
+│   - 读取文件数据               │
+│   - 应用 WPL 规则解析          │
+│   - 分发到 sinks              │
+└────────────────────────────────┘
+    ↓
+┌─────────────┬─────────────┐
+│  blackhole  │   monitor   │
+│    sink     │    sink     │
+│ (丢弃数据)  │ (收集统计)  │
+└─────────────┴─────────────┘
 ```
 
-## 性能调优建议
 
-### Worker 数量
-- CPU 密集型解析：worker 数 ≈ CPU 核心数
-- I/O 密集型场景：可适当增加 worker
+## 验证与故障排除
 
-### 数据规模
-- 快速验证：`-m`（20 万行）
-- 完整压测：默认（2000 万行）
-- 自定义：`-c 5000000`（500 万行）
+### 运行成功验证
 
-### 限速控制
-- 不限速测试纯解析性能
-- 限速模拟真实场景
+1. **检查性能输出**
+   - 查看 terminal 输出的实时统计信息
+   - 关注 "Throughput"（吞吐量）指标
+   - 确认无错误或异常
 
-## 常见问题
+2. **验证输出文件**
+   ```bash
+   # 检查监控数据
+   ls -la data/out_dat/monitor.dat
 
-### Q1: 数据生成太慢
-- 使用 `-m` 减少数据量
-- 检查磁盘 I/O 性能
+   # 确认其他文件为空（无错误）
+   ls -la data/out_dat/{error,miss,residue}.dat
+   ```
 
-### Q2: 内存不足
-- 减少 worker 数量
-- 使用较小的数据集
 
-### Q3: 如何查看详细日志
-```bash
-tail -f ./data/logs/wparse.log
-```
 
-## 相关文档
-- [Benchmark 总览](../README.md)
-- [benchmark_common.sh](../benchmark_common.sh)
+
+## 性能
+
+### 优化
+
+1. **系统级优化**
+
+   **Linux 系统：**
+   ```bash
+   # CPU 亲和性设置
+   taskset -c 0-5 ./run.sh -w 6
+
+   # I/O 调度器优化（SSD）
+   echo noop | sudo tee /sys/block/sdX/queue/scheduler
+
+   # 增大文件描述符限制
+   ulimit -n 65536
+   ```
+
+   **macOS 系统：**
+   ```bash
+   # 调整文件描述符限制
+   ulimit -n 65536
+
+   # 调整系统参数（需要管理员权限）
+   sudo sysctl -w kern.maxfiles=65536
+   sudo sysctl -w kern.maxfilesperproc=65536
+   ```
+
+2. **应用级优化**
+   - 增加 worker 数量：`-w 12`（不超过 CPU 核心数）
+   - 使用更快的 WPL 规则（如 nginx）
+   - 启用数据预生成并缓存
+
+3. **存储优化**
+   - 使用 SSD 存储
+   - 使用 RAID 0 提高读写性能
+   - 考虑使用内存文件系统
+
+### 影响因素
+
+1. **WPL 规则复杂度**
+   - nginx：简单正则，性能最佳
+   - apache：中等复杂度
+   - sysmon：复杂规则，性能较低
+
+2. **数据特征**
+   - 日志行长度
+   - 正则匹配复杂度
+   - 字段提取数量
+
+3. **系统配置**
+   - CPU 核心数和频率
+   - 内存大小和速度
+   - 磁盘 I/O 性能（关键因素）
+
+
+### 使用建议
+
+- **选择 file_blackhole**：
+  - 需要测试纯解析性能
+  - 批量数据处理场景
+  - 追求最高吞吐量
+
+- **选择 tcp_blackhole**：
+  - 需要可靠的网络传输
+  - 实时数据处理
+  - 模拟 TCP 数据源
+
+- **选择 syslog_blackhole**：
+  - 传统 syslog 集成
+  - 极限性能测试
+  - 日志收集场景
+
+---
+
+*本文档最后更新时间：2025-12-16*

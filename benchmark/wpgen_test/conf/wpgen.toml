@@ -18,6 +18,6 @@ connect = "blackhole_sink"
 #params = { file= "gen.dat", base = "./data/in_dat"  }
 
 [logging]
-level = "debug,mtrc=trace"
+level = "warn"
 output = "file"
 file_path = "./data/logs/"

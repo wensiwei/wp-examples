@@ -13,12 +13,8 @@ name = "gen_out"
 #connect = "file_raw_sink"
 connect = "syslog_tcp_sink"
 params = { port= 1514  }
-#connect = "syslog_udp_sink"
-#params = { addr = "127.0.0.1"  }
-#params = { file= "gen.dat", base = "./data/in_dat"  }
 
 [logging]
 level = "warn"
-module_levels = ["ctrl=info", "launch=info"]
 output = "file"
 file_path = "./data/logs/"

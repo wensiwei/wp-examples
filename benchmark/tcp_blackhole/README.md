@@ -49,7 +49,9 @@ benchmark/tcp_blackhole/
 - WarpParse 引擎（需在系统 PATH 中）
 - Bash shell 环境
 - 支持 TCP 网络连接的系统环境
-- 推荐使用 Linux 系统以获得最佳性能
+- 推荐系统：
+  - **Linux**：最佳性能，支持所有优化功能
+  - **macOS**：良好性能，部分优化功能受限
 
 ### 运行命令
 
@@ -131,19 +133,17 @@ wpgen 生成器
     ↓ TCP 连接 (端口 19001)
 ┌────────────────────────────────┐
 │        wparse daemon           │
-│    - 接收 TCP 数据             │
-│    - 应用 WPL 规则解析         │
-│    - 分发到 sinks             │
+│    - 接收 TCP 数据              │
+│    - 应用 WPL 规则解析           │
+│    - 分发到 sinks               │
 └────────────────────────────────┘
     ↓
 ┌─────────────┬─────────────┐
 │  blackhole  │   monitor   │
 │    sink     │    sink     │
-│ (丢弃数据)  │ (收集统计)  │
+│ (丢弃数据)  │ (收集统计)     │
 └─────────────┴─────────────┘
 ```
-
-
 
 ## 验证与故障排除
 
@@ -161,15 +161,6 @@ wpgen 生成器
 
    # 确认其他文件为空（无错误）
    ls -la data/out_dat/{error,miss,residue}.dat
-   ```
-
-3. **查看统计报告**
-   ```bash
-   # 运行结束后会输出类似报告：
-   # Total processed: 20,000,000 lines
-   # Average throughput: 1,234,567 lines/sec
-   # Peak throughput: 1,500,000 lines/sec
-   # Errors: 0, Miss: 0
    ```
 
 ### 常见问题与解决方案
@@ -191,28 +182,7 @@ netstat -tlnp | grep 19001
 ss -tlnp | grep 19001
 ```
 
-#### 2. 性能低于预期
-
-**可能原因**：
-- 系统资源不足（CPU、内存）
-- 网络缓冲区限制
-- TCP 参数配置不当
-
-**优化建议**：
-```bash
-# 调整 TCP 缓冲区大小（需要 root 权限）
-sudo sysctl -w net.core.wmem_max=26214400
-sudo sysctl -w net.core.rmem_max=26214400
-sudo sysctl -w net.ipv4.tcp_wmem="4096 65536 16777216"
-sudo sysctl -w net.ipv4.tcp_rmem="4096 65536 16777216"
-
-# 调整文件描述符限制
-ulimit -n 65536
-```
-
-
-
-#### 5. daemon 进程未正常退出
+#### 2. daemon 进程未正常退出
 
 **解决方案**：
 ```bash
@@ -224,36 +194,23 @@ kill -9 <PID>
 sudo lsof -i :19001
 ```
 
-### 性能调优
+## 性能
 
+### 优化
 1. **系统级优化**
+
+   **Linux 系统：**
    ```bash
    # CPU 亲和性设置
    taskset -c 0-5 ./run.sh -w 6
 
    # 实时优先级（需要 root）
    sudo chrt -f 99 ./run.sh
+
+   # 调整 TCP 缓冲区（需要 root）
+   sudo sysctl -w net.core.wmem_max=26214400
+   sudo sysctl -w net.core.rmem_max=26214400
    ```
-
-2. **应用级优化**
-   - 增加 worker 数量：`-w 12`（不超过 CPU 核心数）
-   - 使用更快的 WPL 规则（如 nginx）
-   - 启用多路数据源：修改 run.sh 启用双路
-
-3. **网络优化**
-   - 使用 localhost 避免网络开销
-   - 调整 TCP_NODELAY 参数
-   - 增加 send/receive 缓冲区
-
-## 性能基准
-
-基于标准测试环境（8核 CPU，16GB 内存）：
-
-| 测试规模 | 数据量 | Worker | 平均吞吐量 | 峰值吞吐量 | 内存使用 |
-|----------|--------|--------|------------|------------|----------|
-| 中等 | 20万 | 6 | 50K/s | 80K/s | ~200MB |
-| 大规模 | 2000万 | 6 | 800K/s | 1.2M/s | ~500MB |
-| 极限 | 5000万 | 12 | 1.2M/s | 1.8M/s | ~800MB |
 
 ### 影响因素
 
@@ -272,6 +229,5 @@ sudo lsof -i :19001
    - 内存大小和速度
    - 磁盘 I/O（日志写入）
 
-## 扩展用法
 
 *本文档最后更新时间：2025-12-16*
