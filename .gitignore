@@ -8,7 +8,6 @@ data
 out
 core/getting_started/conf
 gen*.dat
-*.dat
 *.gz
 record.md
 **/data/
