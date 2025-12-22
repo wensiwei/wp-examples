@@ -11,6 +11,8 @@ STAT_SEC=${STAT_SEC:-3}
 core_usecase_bootstrap "${1:-debug}" keep_conf wparse wpgen wproj
 
 echo "1> init wparse service"
+# 清理已存在的目录
+rm -rf conf models topology data || true
 
 echo "1> init conf & data"
 # 初始化配置与数据目录
