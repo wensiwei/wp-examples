@@ -8,7 +8,7 @@
 
 ## 数据流图
 
-下图展示 testcase 的数据流与关键环节（环境变量 `KAFKA_INPUT_TOPIC/KAFKA_OUTPUT_TOPIC` 可覆写 topic 名称，默认 `wp.testcase.events.raw/wp.testcase.events.parsed`）。
+下图展示 testcase 的数据流与关键环节（`wp.testcase.events.raw/wp.testcase.events.parsed`）。
 
 ```mermaid
 flowchart LR
@@ -51,8 +51,8 @@ wpgen(sample) --> Kafka(KAFKA_INPUT_TOPIC) --> wparse(batch) --> [OML/route] -->
 - `conf/`
   - `wparse.toml`：引擎主配置（目录/并发/日志等）
   - `wpgen.toml`：数据生成器配置（已指向 Kafka sink，并覆写输入 topic）
-- `models/source/wpsrc.toml`：Source 路由（包含两个 `[[sources]]`：`kafka_input` 订阅输入 topic；`kafka_output_tap` 订阅输出 topic，用于自测/演示，可按需关闭）
-- `models/sink/business.d/example.toml`：业务 Sink 路由（包含一个文件型 sink 与一个 Kafka sink）
+- `topology/source/wpsrc.toml`：Source 路由（包含两个 `[[sources]]`：`kafka_input` 订阅输入 topic；`kafka_output_tap` 订阅输出 topic，用于自测/演示，可按需关闭）
+- `topology/sink/business.d/example.toml`：业务 Sink 路由（包含一个文件型 sink 与一个 Kafka sink）
 - `models/oml/...`：OML 模型（结果字段映射/脱敏）
 - `case_verify.sh`：一键校验脚本（启动 `wparse` → `wpgen` 发送 → 校验）
 
@@ -63,7 +63,6 @@ wpgen(sample) --> Kafka(KAFKA_INPUT_TOPIC) --> wparse(batch) --> [OML/route] -->
 ## 前置要求
 
 - 本机已启动 Kafka，默认地址 `localhost:9092`（或通过环境变量覆盖，见下文）
-- 构建工具链可用（`cargo` 等）
 
 ## 快速开始
 
@@ -108,39 +107,3 @@ wpkit kafka consume --brokers ${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092} \
   --group wpkit-consume-$$ \
   --topic "${KAFKA_OUTPUT_TOPIC:-wp.testcase.events.parsed}"
 ```
-
-## 输出格式（Kafka Sink）
-
-Kafka Sink 支持多种输出格式，默认 `json`。可在以下位置设置：
-- 全局连接器：`connectors/sink.d/30-kafka.toml` 中设置 `fmt = "json|csv|kv|raw|show|proto-text"`（并允许覆写 `fmt`）
-- 按路由覆写：在 `[[sink_group.sinks]].params` 中增加 `fmt = "..."`
-
-说明：
-- `proto` 需启用企业插件（当前默认退化为 `proto-text`）；
-- 其它格式均以内置生成器输出一行（带换行）。
-
-## 重要提示与排查
-
-- 启动顺序：脚本已保证“先启动 `wparse` 再 `wpgen` 发送”，无需设置 `auto.offset.reset=earliest`；如需消费历史，亦可在 `models/source/wpsrc.toml` 的 `params_override.config` 中添加 `"auto.offset.reset=earliest"`
-- 主题创建：连接器会尝试创建 topic，如集群禁用自动建主题或副本策略不符，请预先创建或调整 `num_partitions/replication`
-- 认证安全：如需 SASL/SSL，请在 `connectors/sink.d/30-kafka.toml` 或路由 `params_override` 中通过 `config = ["security.protocol=...", ...]` 传入
-- 输出被“吃掉”：用例自带 `kafka_output_tap` Source 订阅了 `wp.testcase.events.parsed`，可能在你消费时已被读取。验证时请使用一个全新的 `--group`
-
-## 参考命令
-
-- 查看解析到的路由：
-
-```bash
-wpkit sinks route -w .
-wpkit sources route -w .
-```
-
-- 单独探活 Kafka：
-
-```bash
-wpkit kafka produce --brokers ${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092} --topic test_topic
-wpkit kafka consume --brokers ${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092} --group wpkit-consume-$$ --topic test_topic
-```
-
----
-如需将输出格式切换为 `csv/kv/raw/show/proto-text` 并随脚本验证，建议直接在 `connectors/sink.d/30-kafka.toml` 中设置 `fmt`，或在 `models/sink/business.d/example.toml` 中的 Kafka sink 路由 `params` 下覆写 `fmt`。
