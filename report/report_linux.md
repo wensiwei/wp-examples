@@ -1,4 +1,4 @@
-# WarpParse vs Vector 性能基准测试报告（Linux）
+# WarpParse vs Vector 性能基准测试报告
 
 ## 1. 技术概述与测试背景
 
@@ -98,8 +98,8 @@
 
 | 引擎          | 拓扑              | EPS         | MPS    | CPU (Avg/Peak) | MEM (Avg/Peak)  | 性能倍数 |
 | :------------ | :---------------- | :---------- | :----- | :------------- | :-------------- | :------- |
-| **WarpParse** | File -> BlackHole | **152,500** | 143.40 | 726% / 776%    | 318 MB / 368 MB | **2.0x** |
-| Vector        | File -> BlackHole | 76,717      | 72.14  | 463% / 564%    | 295 MB / 313 MB | 1.0x     |
+| **WarpParse** | File -> BlackHole | **152,500** | 143.40 | 726% / 776%    | 318 MB / 368 MB | **5.1x** |
+| Vector        | File -> BlackHole | 29,444      | 27.68  | 458% / 501%    | 202 MB / 213 MB | 1.0x     |
 | **WarpParse** | TCP -> BlackHole  | **149,800** | 140.86 | 711% / 763%    | 221 MB / 678 MB | **4.0x** |
 | Vector        | TCP -> BlackHole  | 37,400      | 35.17  | 580% / 650%    | 236 MB / 246 MB | 1.0x     |
 | **WarpParse** | TCP -> File       | **104,900** | 98.64  | 750% / 764%    | 169 MB / 505 MB | **7.7x** |
