@@ -16,3 +16,4 @@ record.md
 *.html
 *.py
 wp-docs
+tmp
