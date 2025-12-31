@@ -1,6 +1,6 @@
 # WP-Examples
 
-[![CI Tests](https://github.com/wp-labs/wp-examples/actions/workflows/test.yml/badge.svg)](https://github.com/wp-labs/wp-examples/actions/workflows/test.yml)
+[![CI Tests](https://img.shields.io/github/actions/workflow/status/wp-labs/wp-examples/test.yml?branch=main&label=CI)](https://github.com/wp-labs/wp-examples/actions/workflows/test.yml)
 
 WarpParse 日志解析引擎的示例项目，展示如何使用 WarpParse进行高性能日志解析和处理。
 
