@@ -25,7 +25,7 @@ benchmark_usage() {
 benchmark_parse_args() {
   MEDIUM_MODE=0
   FORCE_REGEN=0
-  WPL_DIR="nginx"
+  WPL_DIR=""
   SPEED_MAX="0"
   WORKER_CNT=""
   CUSTOM_LINE_CNT=""
@@ -86,7 +86,7 @@ benchmark_parse_args() {
 # 固定使用 release profile
 benchmark_init_env() {
   # 加载公共函数库 - 直接使用已知的正确路径
-  local common_lib="${COMMON_LIB:-$(cd "$(dirname "${BASH_SOURCE[1]}")/../../script" && pwd)/common.sh}"
+  local common_lib="${COMMON_LIB:-$(cd "$(dirname "${BASH_SOURCE[1]}")/../../../script" && pwd)/common.sh}"
   if [ ! -f "$common_lib" ]; then
     echo "Error: Cannot find common.sh library at: $common_lib" >&2
     exit 2
@@ -135,9 +135,14 @@ benchmark_validate_wpl_path() {
     script_dir="$(cd "$(dirname "${0}")" && pwd)"
   fi
 
+  # 特殊处理：mix 使用 wpl 根目录
+  if [ "$wpl_dir" = "mix" ]; then
+    wpl_dir=""
+  fi
+
   # 始终基于脚本所在目录计算相对路径
   # 从 benchmark 子目录到 models/wpl
-  WPL_PATH="../models/wpl/${wpl_dir}"
+  WPL_PATH="../../models/wpl/${wpl_dir}"
 
   if [ ! -d "$WPL_PATH" ]; then
     echo "wpl dir not found: $WPL_PATH" >&2
