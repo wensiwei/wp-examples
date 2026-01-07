@@ -7,6 +7,8 @@ services:
     container_name: fluent-bit
     restart: unless-stopped
     command: ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/fluent-bit.yml"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # 测试的日志
       - ./fluent-bit/test-logs:/test-logs:ro
