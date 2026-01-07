@@ -35,7 +35,12 @@ start_process() {
     local pid_file="$3"
 
     echo "[INFO] Starting: $cmd"
-    nohup $cmd > "$log_file" 2>&1 &
+    OS="$(uname -s)"
+    if [ "$OS" = "Linux" ]; then
+        nohup $cmd > "$log_file" 2>&1 &
+    else
+        $cmd > "$log_file" 2>&1 &
+    fi
     echo $! > "$pid_file"
     echo "[INFO] PID $! recorded in $pid_file"
 }

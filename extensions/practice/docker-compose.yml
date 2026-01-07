@@ -23,6 +23,8 @@ services:
   kafka:
     container_name: kafka
     image: apache/kafka:4.1.1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "9092:9092"
     environment:
@@ -51,6 +53,8 @@ services:
   kafka-exporter:
     container_name: kafka-exporter
     image: danielqsj/kafka-exporter:v1.9.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["--kafka.server=kafka:9092"]
     restart: on-failure
     depends_on:
@@ -140,6 +144,30 @@ services:
     volumes:
       # 挂载配置文件目录
       - ./wp-monitor:/app/config
+
+  grafana:
+    container_name: grafana
+    image: dysec/grafana:11.6.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - ./grafana/dashboards:/usr/share/grafana/dashboards:ro
+    environment:
+      - TZ=Asia/Shanghai
+      - GF_SECURITY_ADMIN_USER=dayu
+      - GF_SECURITY_ADMIN_PASSWORD=Dayu@1234
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://127.0.0.1:3000/api/health | grep ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+
 
 networks:
   app-network:
