@@ -12,7 +12,7 @@ package /nginx {
                 chars:referer",
                 http/agent",
                 *_
-            )  
+            )
         )
   }
 
