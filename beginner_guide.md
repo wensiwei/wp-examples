@@ -1,4 +1,4 @@
-# GettingStarted
+# Beginner Guide
 
 我们来开启 WarpParse 的使用学习。
 
