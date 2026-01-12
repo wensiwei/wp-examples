@@ -17,20 +17,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: peaceiris/mdbook:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup mdBook
-        uses: peaceiris/actions-mdbook@v2
-        with:
-          mdbook-version: 'latest'
-
       - name: Build mdBook
         run: mdbook build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

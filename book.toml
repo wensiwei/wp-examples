@@ -2,7 +2,6 @@
 title = "Warp Parse Documentation"
 authors = ["Warp Parse Team"]
 language = "zh-CN"
-multilingual = false
 src = "./"
 
 [build]
