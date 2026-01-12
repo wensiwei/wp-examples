@@ -6,7 +6,7 @@
 ### 安装
 
 ```bash
-curl https://raw.githubusercontent.com/wp-labs/warp-parse/refs/heads/main/setup.rs | sh
+curl  -sSf https://raw.githubusercontent.com/wp-labs/warp-parse/refs/heads/main/setup.sh | sh
 ```
 
 [最新发布页](https://github.com/wp-labs/warp-parse/releases)
