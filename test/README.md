@@ -1,5 +1,5 @@
 影响功能的因素如下：
-日志类型、发送者与source数量、source类型、model类型、sink与接收者数量、sink类型、网络因素。
+日志类型、发送者与source数量、source类型、model类型、sink与接收者数量、sink类型、网络因素、重启。
 最终的测试用例数量是上诉因素相乘。
 
 ### 日志类型
@@ -40,7 +40,7 @@
 model也存在不同的操作类型，但是model主要做数据重命名，我认为该操作测试优先级不高，是否可以忽略。
 
 ### source类型
-tcp、file、syslog 的所有组合均被纳入测试：
+tcp、kafka、syslog 的所有组合均被纳入测试：
 - kafka
 - kafka+tcp
 - kafka+syslog

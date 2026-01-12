@@ -117,7 +117,7 @@ services:
       - --http.shutdownDelay=15s
       - --httpListenAddr=:9428
       - --loggerFormat=json
-      - --retentionPeriod=15d
+      - --retentionPeriod=10h
       - --storageDataPath=/storage
     environment:
       - TZ=Asia/Shanghai
