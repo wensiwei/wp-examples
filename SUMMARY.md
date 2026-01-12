@@ -2,7 +2,7 @@
 - [Changelog](CHANGLOG.md)
 - [Beginner Guide](beginner_guide.md)
 - [getting_started](getting_started/README.md)
-- [评估](evaluate.md)
+- [evaluate](evaluate.md)
 - [Core用例](core/README.md)
   - [配置使用变量](core/confvars_case/README.md)
   - [error_reporting](core/error_reporting/README.md)
